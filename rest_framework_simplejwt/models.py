@@ -19,8 +19,6 @@ class TokenUser(object):
     class instead of a `User` model instance.  Instances of this class act as
     stateless user objects which are backed by validated tokens.
     """
-    username = ''
-
     # User is always active since Simple JWT will never issue a token for an
     # inactive user
     is_active = True
@@ -41,6 +39,10 @@ class TokenUser(object):
     @cached_property
     def pk(self):
         return self.id
+
+    @cached_property
+    def username(self):
+        return self.token.get('username', '')
 
     @cached_property
     def is_staff(self):
