@@ -1,22 +1,18 @@
-from __future__ import unicode_literals
-
 from datetime import timedelta
 from uuid import uuid4
 
 from django.conf import settings
-from django.utils.six import python_2_unicode_compatible, text_type
 from django.utils.translation import ugettext_lazy as _
 
 from .exceptions import TokenBackendError, TokenError
 from .settings import api_settings
 from .token_blacklist.models import BlacklistedToken, OutstandingToken
 from .utils import (
-    aware_utcnow, datetime_from_epoch, datetime_to_epoch, format_lazy
+    aware_utcnow, datetime_from_epoch, datetime_to_epoch, format_lazy,
 )
 
 
-@python_2_unicode_compatible
-class Token(object):
+class Token:
     """
     A class which validates and wraps an existing JWT or can be used to build a
     new JWT.
@@ -97,6 +93,10 @@ class Token(object):
         # claim.  We don't want any zombie tokens walking around.
         self.check_exp()
 
+        # Ensure token id is present
+        if api_settings.JTI_CLAIM not in self.payload:
+            raise TokenError(_('Token has no id'))
+
         self.verify_token_type()
 
     def verify_token_type(self):
@@ -113,14 +113,14 @@ class Token(object):
 
     def set_jti(self):
         """
-        Populates the "jti" claim of a token with a string where there is a
-        negligible probability that the same string will be chosen at a
+        Populates the configured jti claim of a token with a string where there
+        is a negligible probability that the same string will be chosen at a
         later time.
 
         See here:
         https://tools.ietf.org/html/rfc7519#section-4.1.7
         """
-        self.payload['jti'] = uuid4().hex
+        self.payload[api_settings.JTI_CLAIM] = uuid4().hex
 
     def set_exp(self, claim='exp', from_time=None, lifetime=None):
         """
@@ -160,7 +160,7 @@ class Token(object):
         """
         user_id = getattr(user, api_settings.USER_ID_FIELD)
         if not isinstance(user_id, int):
-            user_id = text_type(user_id)
+            user_id = str(user_id)
 
         token = cls()
         token[api_settings.USER_ID_CLAIM] = user_id
@@ -168,7 +168,7 @@ class Token(object):
         return token
 
 
-class BlacklistMixin(object):
+class BlacklistMixin:
     """
     If the `rest_framework_simplejwt.token_blacklist` app was configured to be
     used, tokens created from `BlacklistMixin` subclasses will insert
@@ -179,14 +179,14 @@ class BlacklistMixin(object):
         def verify(self, *args, **kwargs):
             self.check_blacklist()
 
-            super(BlacklistMixin, self).verify(*args, **kwargs)
+            super().verify(*args, **kwargs)
 
         def check_blacklist(self):
             """
             Checks if this token is present in the token blacklist.  Raises
             `TokenError` if so.
             """
-            jti = self.payload['jti']
+            jti = self.payload[api_settings.JTI_CLAIM]
 
             if BlacklistedToken.objects.filter(token__jti=jti).exists():
                 raise TokenError(_('Token is blacklisted'))
@@ -196,7 +196,7 @@ class BlacklistMixin(object):
             Ensures this token is included in the outstanding token list and
             adds it to the blacklist.
             """
-            jti = self.payload['jti']
+            jti = self.payload[api_settings.JTI_CLAIM]
             exp = self.payload['exp']
 
             # Ensure outstanding token exists with given jti
@@ -215,9 +215,9 @@ class BlacklistMixin(object):
             """
             Adds this token to the outstanding token list.
             """
-            token = super(BlacklistMixin, cls).for_user(user)
+            token = super().for_user(user)
 
-            jti = token['jti']
+            jti = token[api_settings.JTI_CLAIM]
             exp = token['exp']
 
             OutstandingToken.objects.create(
@@ -236,7 +236,7 @@ class SlidingToken(BlacklistMixin, Token):
     lifetime = api_settings.SLIDING_TOKEN_LIFETIME
 
     def __init__(self, *args, **kwargs):
-        super(SlidingToken, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if self.token is None:
             # Set sliding refresh expiration claim if new token
@@ -250,7 +250,17 @@ class SlidingToken(BlacklistMixin, Token):
 class RefreshToken(BlacklistMixin, Token):
     token_type = 'refresh'
     lifetime = api_settings.REFRESH_TOKEN_LIFETIME
-    no_copy_claims = (api_settings.TOKEN_TYPE_CLAIM, 'exp', 'jti')
+    no_copy_claims = (
+        api_settings.TOKEN_TYPE_CLAIM,
+        'exp',
+
+        # Both of these claims are included even though they may be the same.
+        # It seems possible that a third party token might have a custom or
+        # namespaced JTI claim as well as a default "jti" claim.  In that case,
+        # we wouldn't want to copy either one.
+        api_settings.JTI_CLAIM,
+        'jti',
+    )
 
     @property
     def access_token(self):

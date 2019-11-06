@@ -1,14 +1,16 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.test import TestCase
-from mock import patch
+
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.token_blacklist.models import (
-    BlacklistedToken, OutstandingToken
+    BlacklistedToken, OutstandingToken,
 )
 from rest_framework_simplejwt.tokens import (
-    AccessToken, RefreshToken, SlidingToken
+    AccessToken, RefreshToken, SlidingToken,
 )
 from rest_framework_simplejwt.utils import aware_utcnow, datetime_from_epoch
 
@@ -171,7 +173,7 @@ class TestPopulateJtiHexMigration(MigrationTestCase):
             password='test_password',
         )
 
-        super(TestPopulateJtiHexMigration, self).setUp()
+        super().setUp()
 
     def setUpBeforeMigration(self, apps):
         # Ensure some tokens are present in the outstanding list

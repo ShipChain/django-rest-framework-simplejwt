@@ -1,19 +1,17 @@
-from __future__ import unicode_literals
-
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 from django.test import TestCase
-from django.utils.six import text_type
 from jose import jwt
-from mock import patch
+
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.state import User
 from rest_framework_simplejwt.tokens import (
-    AccessToken, RefreshToken, SlidingToken, Token, UntypedToken
+    AccessToken, RefreshToken, SlidingToken, Token, UntypedToken,
 )
 from rest_framework_simplejwt.utils import (
-    aware_utcnow, datetime_to_epoch, make_utc
+    aware_utcnow, datetime_to_epoch, make_utc,
 )
 
 from .utils import override_api_settings
@@ -291,7 +289,7 @@ class TestToken(TestCase):
 
         user_id = getattr(user, api_settings.USER_ID_FIELD)
         if not isinstance(user_id, int):
-            user_id = text_type(user_id)
+            user_id = str(user_id)
 
         self.assertEqual(token[api_settings.USER_ID_CLAIM], user_id)
 
@@ -352,7 +350,7 @@ class TestUntypedToken(TestCase):
         sliding_token = SlidingToken()
 
         for t in (access_token, refresh_token, sliding_token):
-            untyped_token = UntypedToken(text_type(t))
+            untyped_token = UntypedToken(str(t))
 
             self.assertEqual(
                 t.payload,

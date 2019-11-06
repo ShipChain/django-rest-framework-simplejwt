@@ -1,6 +1,3 @@
-from __future__ import unicode_literals
-
-from django.utils.six import text_type
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import HTTP_HEADER_ENCODING, authentication
 
@@ -38,7 +35,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
 
         validated_token = self.get_validated_token(raw_token)
 
-        return self.get_user(validated_token), None
+        return self.get_user(validated_token), validated_token
 
     def authenticate_header(self, request):
         return '{0} realm="{1}"'.format(
@@ -53,7 +50,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
         """
         header = request.META.get('HTTP_AUTHORIZATION')
 
-        if isinstance(header, text_type):
+        if isinstance(header, str):
             # Work around django test client oddness
             header = header.encode(HTTP_HEADER_ENCODING)
 

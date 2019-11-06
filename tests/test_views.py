@@ -1,15 +1,13 @@
-from __future__ import unicode_literals
-
 from datetime import timedelta
+from unittest.mock import patch
 
-from mock import patch
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.state import User
 from rest_framework_simplejwt.tokens import (
-    AccessToken, RefreshToken, SlidingToken
+    AccessToken, RefreshToken, SlidingToken,
 )
 from rest_framework_simplejwt.utils import (
-    aware_utcnow, datetime_from_epoch, datetime_to_epoch
+    aware_utcnow, datetime_from_epoch, datetime_to_epoch,
 )
 
 from .utils import APIViewTestCase
@@ -46,8 +44,8 @@ class TestTokenObtainPairView(APIViewTestCase):
             User.USERNAME_FIELD: self.username,
             'password': 'test_user',
         })
-        self.assertEqual(res.status_code, 400)
-        self.assertIn('non_field_errors', res.data)
+        self.assertEqual(res.status_code, 401)
+        self.assertIn('detail', res.data)
 
     def test_user_inactive(self):
         self.user.is_active = False
@@ -57,8 +55,8 @@ class TestTokenObtainPairView(APIViewTestCase):
             User.USERNAME_FIELD: self.username,
             'password': self.password,
         })
-        self.assertEqual(res.status_code, 400)
-        self.assertIn('non_field_errors', res.data)
+        self.assertEqual(res.status_code, 401)
+        self.assertIn('detail', res.data)
 
     def test_success(self):
         res = self.view_post(data={
@@ -152,8 +150,8 @@ class TestTokenObtainSlidingView(APIViewTestCase):
             User.USERNAME_FIELD: self.username,
             'password': 'test_user',
         })
-        self.assertEqual(res.status_code, 400)
-        self.assertIn('non_field_errors', res.data)
+        self.assertEqual(res.status_code, 401)
+        self.assertIn('detail', res.data)
 
     def test_user_inactive(self):
         self.user.is_active = False
@@ -163,8 +161,8 @@ class TestTokenObtainSlidingView(APIViewTestCase):
             User.USERNAME_FIELD: self.username,
             'password': self.password,
         })
-        self.assertEqual(res.status_code, 400)
-        self.assertIn('non_field_errors', res.data)
+        self.assertEqual(res.status_code, 401)
+        self.assertIn('detail', res.data)
 
     def test_success(self):
         res = self.view_post(data={

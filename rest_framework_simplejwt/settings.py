@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from datetime import timedelta
 
 from django.conf import settings
@@ -29,6 +27,8 @@ DEFAULTS = {
 
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_TYPE_CLAIM': 'token_type',
+
+    'JTI_CLAIM': 'jti',
 
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
@@ -60,6 +60,7 @@ class APISettings(_APISettings):  # pragma: no cover
 
         return user_settings
 
+
 api_settings = APISettings(USER_SETTINGS, DEFAULTS, IMPORT_STRINGS)
 
 
@@ -70,5 +71,6 @@ def reload_api_settings(*args, **kwargs):  # pragma: no cover
 
     if setting == 'SIMPLE_JWT':
         api_settings = APISettings(value, DEFAULTS, IMPORT_STRINGS)
+
 
 setting_changed.connect(reload_api_settings)

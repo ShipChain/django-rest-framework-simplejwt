@@ -1,11 +1,7 @@
-from __future__ import unicode_literals
-
 from django.conf import settings
 from django.db import models
-from django.utils.six import python_2_unicode_compatible
 
 
-@python_2_unicode_compatible
 class OutstandingToken(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
 
@@ -31,7 +27,6 @@ class OutstandingToken(models.Model):
         )
 
 
-@python_2_unicode_compatible
 class BlacklistedToken(models.Model):
     token = models.OneToOneField(OutstandingToken, on_delete=models.CASCADE)
 

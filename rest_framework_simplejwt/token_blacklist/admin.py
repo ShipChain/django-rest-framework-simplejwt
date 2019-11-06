@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
@@ -22,7 +20,7 @@ class OutstandingTokenAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, *args, **kwargs):
-        qs = super(OutstandingTokenAdmin, self).get_queryset(*args, **kwargs)
+        qs = super().get_queryset(*args, **kwargs)
 
         return qs.select_related('user')
 
@@ -40,9 +38,10 @@ class OutstandingTokenAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return (
-            request.method in ['GET', 'HEAD'] and
-            super(OutstandingTokenAdmin, self).has_change_permission(request, obj)
+            request.method in ['GET', 'HEAD'] and  # noqa: W504
+            super().has_change_permission(request, obj)
         )
+
 
 admin.site.register(OutstandingToken, OutstandingTokenAdmin)
 
@@ -64,7 +63,7 @@ class BlacklistedTokenAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, *args, **kwargs):
-        qs = super(BlacklistedTokenAdmin, self).get_queryset(*args, **kwargs)
+        qs = super().get_queryset(*args, **kwargs)
 
         return qs.select_related('token__user')
 
@@ -87,5 +86,6 @@ class BlacklistedTokenAdmin(admin.ModelAdmin):
         return obj.token.expires_at
     token_expires_at.short_description = _('expires at')
     token_expires_at.admin_order_field = 'token__expires_at'
+
 
 admin.site.register(BlacklistedToken, BlacklistedTokenAdmin)
